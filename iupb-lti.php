@@ -58,7 +58,7 @@ class IUPB_LTI {
       wp_die('This plugin requires the LTI plugin to be installed and active. <br /><a href="' . admin_url( 'plugins.php' ) . '">&laquo; Return to Plugins</a>');' )';
     }
 
-    CandelaLTI::create_db_table();
+    IupbLTI::create_db_table();
   }
 
   public static function admin_menu() {
