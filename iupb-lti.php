@@ -432,11 +432,13 @@ class IUPB_LTI {
    * @see http://wordpress.stackexchange.com/questions/53503/can-i-programmatically-login-a-user-without-a-password
    */
   public static function login_user_no_password( $user_id ) {
-    if ( ! is_user_logged_in() ) {
+    //E. Scull: Finding that user is still considered logged in even after wp_logout() is run above.
+    //Remove is_user_logged_in() check to force user switch if this function is run.
+    //if ( ! is_user_logged_in() ) {
       wp_clear_auth_cookie();
       wp_set_current_user( $user_id );
       wp_set_auth_cookie( $user_id );
-    }
+    //}
   }
 
   /**
