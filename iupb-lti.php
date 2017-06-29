@@ -196,48 +196,44 @@ class IUPB_LTI {
     $logged_out = FALSE;
 
     // if we do not have an external user_id skip account stuff.
-    if ( empty($_POST['user_id']) ) {
+    if ( empty($_POST[IU_LTI_LOGIN_ID_POST_PARAM]) ) {
       return;
     }
 
     // Find user account (if any) with matching ID
-    $user = CandelaLTI::find_user_by_external_id( $_POST['user_id'] );
+    //E. Scull: Use login (username) instead of external id
+    //$user = IUPB_LTI::find_user_by_external_id( $_POST['user_id'] );
+    $user = IUPB_LTI::find_user_by_login( $_POST[IU_LTI_LOGIN_ID_POST_PARAM] );
+
+    //E. Scull: Moved here, was below the following is_user_logged_in() if block
+    if ( empty($user) ) {
+      // Create a user account if we do not have a matching account
+      $user = IUPB_LTI::create_user_account( $_POST[IU_LTI_LOGIN_ID_POST_PARAM] );
+    }
+
+    //E. Scull - update user if any role. TODO: Go ahead and add first/last name when creating user. Why is this a separate function? Why only teachers?
+    //IUPB_LTI::update_user_if_teacher( $user );
+    IUPB_LTI::update_user( $user );
+
+
 
     if ( is_user_logged_in() ) {
-      // if the external ID does not match this users external id, log them out.
+      //E. Scull: If the logged in user's login name doesn't match what's passed from LTI, log them out.
       $current_user = wp_get_current_user();
-      $external_id = CandelaLTI::get_external_id_by_userid( $current_user->ID );
-      if ( ! empty( $external_id ) ) {
-        if ( $external_id != $_POST['user_id'] ) {
-          $logged_out = TRUE;
-          wp_logout();
-        }
-        else {
-          $user = $current_user;
-        }
+      if($current_user->ID !== $user->ID) {
+        wp_logout();
+        $logged_out = TRUE;
       }
       else {
-        // Associate external id to current_user.
-        CandelaLTI::set_external_id_for_userid( $current_user->ID, $_POST['user_id'] );
         $user = $current_user;
       }
     }
 
-    if ( empty($user) ) {
-      // Create a user account if we do not have a matching account
-      $user = CandelaLTI::create_user_account( $_POST['user_id'] );
-    }
-
-    CandelaLTI::update_user_if_teacher( $user );
+    
 
     // If the user is not currently logged in... authenticate as the matched account.
     if ( ! is_user_logged_in() || $logged_out ) {
-      CandelaLTI::login_user_no_password( $user->ID );
-    }
-
-    // Associate the external id with this account.
-    if ( ! empty($_POST['user_id'] ) ) {
-      CandelaLTI::set_external_id_for_userid( $user->ID, $_POST['user_id'] );
+      IUPB_LTI::login_user_no_password( $user->ID );
     }
 
     // Associate the user with this blog as a subscriber if not already associated.
@@ -248,19 +244,6 @@ class IUPB_LTI {
         IUPB_LTI::record_new_register($user, $blog);
       }
     }
-  }
-
-  public static function get_external_id_by_userid( $user_id ) {
-    switch_to_blog(1);
-    $external_id = get_user_meta( $user_id, CANDELA_LTI_USERMETA_EXTERNAL_KEY, TRUE );
-    restore_current_blog();
-    return $external_id;
-  }
-
-  public static function set_external_id_for_userid( $user_id, $external_id ) {
-    switch_to_blog(1);
-    update_user_meta( $user_id, CANDELA_LTI_USERMETA_EXTERNAL_KEY, $external_id );
-    restore_current_blog();
   }
 
   /**
@@ -310,7 +293,6 @@ class IUPB_LTI {
 
       $user = new WP_User( $user_id );
       $user->set_role( 'subscriber' );
-      update_user_meta( $user->ID, CANDELA_LTI_USERMETA_EXTERNAL_KEY, $_POST['user_id'] );
 
       return $user;
     }
@@ -326,7 +308,7 @@ class IUPB_LTI {
     }
 
     $data = array(
-        "lti_user_id"=>$_POST['user_id'],
+        "lti_user_id"=>$_POST[IU_LTI_LOGIN_ID_POST_PARAM],
         "lti_context_id"=>$_POST['context_id'],
         "lti_context_name"=>$_POST['context_title'],
         "lti_school_id"=>$_POST['tool_consumer_instance_guid'],
@@ -438,16 +420,11 @@ class IUPB_LTI {
     endif;
   }
 
-  public static function find_user_by_external_id( $id ) {
+
+  //E. Scull - Add function to find user by login name (username) instead of external_id meta field
+  public static function find_user_by_login( $login ) {
     switch_to_blog(1);
-    $params = array(
-      'meta_key' => CANDELA_LTI_USERMETA_EXTERNAL_KEY,
-      'meta_value' => $id,
-      'number' => 1,
-      'count_total' => false,
-    );
-    $users = get_users( $params );
-    $user = reset( $users );
+    $user = get_user_by( 'login', $login );
     restore_current_blog();
 
     return $user;
