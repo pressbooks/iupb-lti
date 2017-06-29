@@ -299,6 +299,8 @@ class IUPB_LTI {
   }
 
   public static function record_new_register($user, $blog){
+    //E. Scull: Comment out role-related filtering; we want names and default email for everyone (including students) 
+
     $roles = '';
     if (isset($_POST['ext_roles'])) {
       // Canvas' more correct roles values are here
@@ -319,7 +321,7 @@ class IUPB_LTI {
 
     //$role = IUPB_LTI::highest_lti_context_role();
 
-    if ( $role == 'admin' || $role == 'teacher' ) {
+    //if ( $role == 'admin' || $role == 'teacher' ) {
       if ( !empty( $_POST['lis_person_name_given'] ) ) {
         $data['lti_first_name'] = $_POST['lis_person_name_given'];
       }
@@ -329,7 +331,7 @@ class IUPB_LTI {
       if ( !empty( $_POST['lis_person_contact_email_primary'] ) ) {
         $data['lti_email'] = $_POST['lis_person_contact_email_primary'];
       }
-    }
+    //}
 
     $curr = get_current_blog_id();
     switch_to_blog($blog);
@@ -347,32 +349,21 @@ class IUPB_LTI {
   }
 
   /**
-   * If a user is a teacher or admin, set their first/last names
+   * Update user's first/last names
    * If their name wasn't sent, set their name as their role
    *
    * @param $user
    *
    */
-  public static function update_user_if_teacher( $user ) {
-    if( (!empty($user->last_name) || !empty($user->first_name))
-         && ($user->last_name != 'Admin' && $user->last_name != 'Instructor') ){
-      return;
+  public static function update_user( $user ) {
+    $userdata = ['ID' => $user->ID];
+    if( !empty($_POST['lis_person_name_family']) || !empty($_POST['lis_person_name_given']) ){
+      $userdata['last_name'] = $_POST['lis_person_name_family'];
+      $userdata['first_name'] = $_POST['lis_person_name_given'];
     }
 
-    $role = CandelaLTI::highest_lti_context_role();
-
-    if( $role == 'admin' || $role == 'teacher' ){
-      $userdata = ['ID' => $user->ID];
-      if( !empty($_POST['lis_person_name_family']) || !empty($_POST['lis_person_name_given']) ){
-        $userdata['last_name'] = $_POST['lis_person_name_family'];
-        $userdata['first_name'] = $_POST['lis_person_name_given'];
-      } elseif( empty($user->last_name) && empty($user->first_name) ) {
-        $userdata['last_name'] = $role == 'admin' ? 'Admin' : 'Instructor';
-      }
-
-      if( !empty($userdata['last_name']) || !empty($userdata['first_name']) ) {
-        wp_update_user($userdata);
-      }
+    if( !empty($userdata['last_name']) || !empty($userdata['first_name']) ) {
+      wp_update_user($userdata);
     }
   }
 
