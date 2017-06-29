@@ -61,37 +61,37 @@ class IUPB_LTI {
     IupbLTI::create_db_table();
   }
 
-  public static function admin_menu() {
-    add_menu_page(
-      __('LTI maps', 'candela_lti'),
-      __('LTI maps', 'candela_lti'),
-      CANDELA_LTI_CAP_LINK_LTI,
-      'lti-maps',
-      array(__CLASS__, 'lti_maps_page_handler')
-    );
-  }
+  // public static function admin_menu() {
+  //   add_menu_page(
+  //     __('LTI maps', 'candela_lti'),
+  //     __('LTI maps', 'candela_lti'),
+  //     CANDELA_LTI_CAP_LINK_LTI,
+  //     'lti-maps',
+  //     array(__CLASS__, 'lti_maps_page_handler')
+  //   );
+  // }
 
-  public static function lti_maps_page_handler() {
-    global $wpdb;
+  // public static function lti_maps_page_handler() {
+  //   global $wpdb;
 
-    include_once(__DIR__ . '/candela-lti-table.php');
-    $table = new Candela_LTI_Table;
-    $table->prepare_items();
+  //   include_once(__DIR__ . '/candela-lti-table.php');
+  //   $table = new Candela_LTI_Table;
+  //   $table->prepare_items();
 
-    $message = '';
+  //   $message = '';
 
-    if ( 'delete' === $table->current_action() ) {
-      $message = '<div class="updated below-h2" id="message"><p>' . sprintf(__('Maps deleted: %d', 'candela_lti'), count($_REQUEST['ID'])) . '</p></div>';
-    }
+  //   if ( 'delete' === $table->current_action() ) {
+  //     $message = '<div class="updated below-h2" id="message"><p>' . sprintf(__('Maps deleted: %d', 'candela_lti'), count($_REQUEST['ID'])) . '</p></div>';
+  //   }
 
-    print '<div class="wrap">';
-    print $message;
-    print '<form id="candela-lti-maps" method="GET">';
-    print '<input type="hidden" name="page" value="' . $_REQUEST['page'] . '" />';
-    $table->display();
-    print '</form>';
-    print '</div>';
-  }
+  //   print '<div class="wrap">';
+  //   print $message;
+  //   print '<form id="candela-lti-maps" method="GET">';
+  //   print '<input type="hidden" name="page" value="' . $_REQUEST['page'] . '" />';
+  //   $table->display();
+  //   print '</form>';
+  //   print '</div>';
+  // }
 
   /**
    * Do any necessary cleanup.
