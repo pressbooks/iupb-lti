@@ -30,6 +30,11 @@ class IUPB_LTI {
     define('IUPB_LTI_USERMETA_ENROLLMENT', 'iupblti_enrollment_record');
     define('IUPB_LTI_PASSWORD_LENGTH', 32);
 
+    //E. Scull: Add new constants ======================================
+    define('IU_LTI_LOGIN_ID_POST_PARAM', 'custom_canvas_user_login_id');
+    define('IU_DEFAULT_EMAIL_DOMAIN', 'iu.edu');
+    // =================================================================
+
     register_activation_hook( __FILE__, array( __CLASS__, 'activate' ) );
     register_uninstall_hook(__FILE__, array( __CLASS__, 'deactivate') );
 
