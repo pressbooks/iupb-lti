@@ -8,7 +8,7 @@ if (!class_exists('WP_List_Table')) {
     require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
 }
 
-class Candela_LTI_Table extends WP_List_Table {
+class Iupb_LTI_Table extends WP_List_Table {
   function __construct() {
     global $status, $page;
 
@@ -47,10 +47,10 @@ class Candela_LTI_Table extends WP_List_Table {
   function get_columns() {
     return array(
       'cb' => '<input type="checkbox" />',
-      'resource_link_id' => __('Link ID', 'candela_lti'),
-      'target_action' => __('Action', 'candela_lti'),
-      'user' => __('User', 'candela_lti'),
-      'blog_id' => __('Blog ID', 'candela_lti' ),
+      'resource_link_id' => __('Link ID', 'iupb_lti'),
+      'target_action' => __('Action', 'iupb_lti'),
+      'user' => __('User', 'iupb_lti'),
+      'blog_id' => __('Blog ID', 'iupb_lti' ),
     );
   }
 
@@ -71,7 +71,7 @@ class Candela_LTI_Table extends WP_List_Table {
 
   function process_bulk_action() {
     global $wpdb;
-    $table_name = CANDELA_LTI_TABLE;
+    $table_name = IUPB_LTI_TABLE;
 
     if ('delete' === $this->current_action() ) {
       $ids = isset($_REQUEST['ID']) ? $_REQUEST['ID'] : array();
@@ -88,7 +88,7 @@ class Candela_LTI_Table extends WP_List_Table {
 
   function prepare_items() {
     global $wpdb;
-    $table_name = CANDELA_LTI_TABLE;
+    $table_name = IUPB_LTI_TABLE;
 
     $per_page = 20;
 

@@ -1,35 +1,34 @@
 <?php
 /**
  * @wordpress-plugin
- * Plugin Name:       Candela LTI
- * Description:       LTI Integration for Candela
+ * Plugin Name:       IU Pressbooks LTI
+ * Description:       LTI Integration for Pressbooks at IU. Based on the Candela LTI integration from Lumen Learning, but looks for a specified custom LTI parameter to use for the WordPress login id (instead of using the generated LTI user id)
  * Version:           0.1
- * Author:            Lumen Learning
- * Author URI:        http://lumenlearning.com
+ * Author:            UITS eLearning Design and Services
+ * Author URI:        http://teachingonline.iu.edu
  * Text Domain:       lti
  * License:           MIT
- * GitHub Plugin URI: https://github.com/lumenlearning/candela-lti
+ * GitHub Plugin URI: 
  */
 
 // If file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 // Do our necessary plugin setup and add_action routines.
-CandelaLTI::init();
+IUPB_LTI::init();
 
-class CandelaLTI {
+class IUPB_LTI {
   /**
    * Takes care of registering our hooks and setting constants.
    */
   public static function init() {
     // Table name is always root (site)
-    define('CANDELA_LTI_TABLE', 'wp_candelalti');
-    define('CANDELA_LTI_DB_VERSION', '1.2');
-    define('CANDELA_LTI_CAP_LINK_LTI', 'candela link lti launch');
-    define('CANDELA_LTI_USERMETA_LASTLINK', 'candelalti_lastkey');
-    define('CANDELA_LTI_USERMETA_EXTERNAL_KEY', 'candelalti_external_userid');
-    define('CANDELA_LTI_USERMETA_ENROLLMENT', 'candelalti_enrollment_record');
-    define('CANDELA_LTI_PASSWORD_LENGTH', 32);
+    define('IUPB_LTI_TABLE', 'wp_iupblti');
+    define('IUPB_LTI_DB_VERSION', '1.2');
+    define('IUPB_LTI_CAP_LINK_LTI', 'iupb link lti launch');
+    define('IUPB_LTI_USERMETA_LASTLINK', 'iupblti_lastkey');
+    define('IUPB_LTI_USERMETA_ENROLLMENT', 'iupblti_enrollment_record');
+    define('IUPB_LTI_PASSWORD_LENGTH', 32);
 
     register_activation_hook( __FILE__, array( __CLASS__, 'activate' ) );
     register_uninstall_hook(__FILE__, array( __CLASS__, 'deactivate') );
@@ -46,8 +45,8 @@ class CandelaLTI {
 
     add_action('admin_menu', array( __CLASS__, 'admin_menu'));
 
-    define('CANDELA_LTI_TEACHERS_ONLY', 'candela_lti_teachers_only');
-    add_option( CANDELA_LTI_TEACHERS_ONLY, false );
+    define('IUPB_LTI_TEACHERS_ONLY', 'iupb_lti_teachers_only');
+    add_option( IUPB_LTI_TEACHERS_ONLY, false );
 	}
 
   /**
@@ -98,7 +97,7 @@ class CandelaLTI {
    * Do any necessary cleanup.
    */
   public static function deactivate() {
-    CandelaLTI::remove_db_table();
+    IUPB_LTI::remove_db_table();
   }
 
   /**
@@ -108,8 +107,8 @@ class CandelaLTI {
     global $wp;
 
     // allows deep links with an LTI launch urls like:
-    // candela/api/lti/BLOGID?page_title=page_name
-    // candela/api/lti/BLOGID?page_title=section_name%2Fpage_name
+    // <iupb>/api/lti/BLOGID?page_title=page_name
+    // <iupb>/api/lti/BLOGID?page_title=section_name%2Fpage_name
     if ( ! empty($wp->query_vars['page_title'] ) ) {
       switch_to_blog((int)$wp->query_vars['blog']);
       $page = $wp->query_vars['page_title'];
@@ -126,7 +125,7 @@ class CandelaLTI {
     }
 
     // allows deep links with an LTI launch urls like:
-    // candela/api/lti/BLOGID?page_id=10
+    // <iupb>/api/lti/BLOGID?page_id=10
     if ( ! empty($wp->query_vars['page_id'] ) && is_numeric($wp->query_vars['page_id']) ) {
       switch_to_blog((int)$wp->query_vars['blog']);
       $url = get_bloginfo('wpurl') . "?p=" . $wp->query_vars['page_id'] . "&content_only&lti_context_id=" . $wp->query_vars['context_id'];
@@ -146,7 +145,7 @@ class CandelaLTI {
     }
 
     if ( ! empty($wp->query_vars['resource_link_id'] ) ) {
-      $map = CandelaLTI::get_lti_map($wp->query_vars['resource_link_id']);
+      $map = IUPB_LTI::get_lti_map($wp->query_vars['resource_link_id']);
       if ( ! empty( $map->target_action ) ) {
         wp_redirect( $map->target_action );
         exit;
@@ -169,12 +168,12 @@ class CandelaLTI {
    */
   public static function lti_setup() {
     // Manage authentication and account creation.
-    CandelaLTI::lti_accounts();
+    IUPB_LTI::lti_accounts();
 
     // If this is a valid user store the resource_link_id so we have it later.
-    if ( CandelaLTI::user_can_map_lti_links() ) {
+    if ( IUPB_LTI::user_can_map_lti_links() ) {
       $current_user = wp_get_current_user();
-      update_user_meta( $current_user->ID, CANDELA_LTI_USERMETA_LASTLINK, $_POST['resource_link_id'] );
+      update_user_meta( $current_user->ID, IUPB_LTI_USERMETA_LASTLINK, $_POST['resource_link_id'] );
     }
   }
 
@@ -239,9 +238,9 @@ class CandelaLTI {
     // Associate the user with this blog as a subscriber if not already associated.
     $blog = (int)$wp->query_vars['blog'];
     if ( ! empty( $blog ) && ! is_user_member_of_blog( $user->ID, $blog ) ) {
-      if( CandelaLTI::is_lti_user_allowed_to_subscribe($blog)){
+      if( IUPB_LTI::is_lti_user_allowed_to_subscribe($blog)){
         add_user_to_blog( $blog, $user->ID, 'subscriber');
-        CandelaLTI::record_new_register($user, $blog);
+        IUPB_LTI::record_new_register($user, $blog);
       }
     }
   }
@@ -263,20 +262,20 @@ class CandelaLTI {
    * Checks if the settings of the book allow this user to subscribe
    * That means that either all LTI users are, or only teachers/admins
    *
-   * If the blog's CANDELA_LTI_TEACHERS_ONLY option is 1 then only teachers
+   * If the blog's IUPB_LTI_TEACHERS_ONLY option is 1 then only teachers
    * are allowed
    *
    * @param $blog
    */
   public static function is_lti_user_allowed_to_subscribe($blog){
-    $role = CandelaLTI::highest_lti_context_role();
+    $role = IUPB_LTI::highest_lti_context_role();
     if( $role == 'admin' || $role == 'teacher' ) {
       return true;
     } else {
       // Switch to the target blog to get the correct option value
       $curr = get_current_blog_id();
       switch_to_blog($blog);
-      $teacher_only = get_option(CANDELA_LTI_TEACHERS_ONLY);
+      $teacher_only = get_option(IUPB_LTI_TEACHERS_ONLY);
       switch_to_blog($curr);
 
       return $teacher_only != 1;
@@ -299,9 +298,10 @@ class CandelaLTI {
       return $existing_user;
     }
     else {
-      $password = wp_generate_password( CANDELA_LTI_PASSWORD_LENGTH, true);
+      $password = wp_generate_password( IUPB_LTI_PASSWORD_LENGTH, true);
 
-      $user_id = wp_create_user( $username, $password, CandelaLTI::default_lti_email($username) );
+      //E. Scull: TODO, add user's name and other details here too. 
+      $user_id = wp_create_user( $username, $password, IUPB_LTI::default_lti_email($username) );
 
       $user = new WP_User( $user_id );
       $user->set_role( 'subscriber' );
@@ -330,7 +330,7 @@ class CandelaLTI {
         "timestamp"=>time(),
     );
 
-    $role = CandelaLTI::highest_lti_context_role();
+    //$role = IUPB_LTI::highest_lti_context_role();
 
     if ( $role == 'admin' || $role == 'teacher' ) {
       if ( !empty( $_POST['lis_person_name_given'] ) ) {
@@ -346,7 +346,7 @@ class CandelaLTI {
 
     $curr = get_current_blog_id();
     switch_to_blog($blog);
-    update_user_option( $user->ID, CANDELA_LTI_USERMETA_ENROLLMENT, $data );
+    update_user_option( $user->ID, IUPB_LTI_USERMETA_ENROLLMENT, $data );
     switch_to_blog($curr);
   }
 
@@ -417,7 +417,7 @@ class CandelaLTI {
    * @return string admin|teacher|designer|ta|learner|other
    */
   public static function highest_lti_context_role(){
-    $roles = CandelaLTI::get_current_launch_roles();
+    $roles = IUPB_LTI::get_current_launch_roles();
     if (in_array('urn:lti:instrole:ims/lis/Administrator', $roles) || in_array('Administrator', $roles)):
       return "admin";
     elseif (in_array('urn:lti:role:ims/lis/Instructor', $roles) || in_array('Instructor', $roles)):
@@ -465,7 +465,7 @@ class CandelaLTI {
    * Add our LTI api endpoint vars so that wordpress "understands" them.
    */
   public static function query_vars( $query_vars ) {
-    $query_vars[] = '__candelalti';
+    $query_vars[] = '__iupblti';
     $query_vars[] = 'resource_link_id';
     $query_vars[] = 'target_action';
     $query_vars[] = 'page_title';
@@ -473,7 +473,7 @@ class CandelaLTI {
     $query_vars[] = 'action';
     $query_vars[] = 'ID';
     $query_vars[] = 'context_id';
-    $query_vars[] = 'candela-lti-nonce';
+    $query_vars[] = 'iupb-lti-nonce';
     $query_vars[] = 'custom_page_id';
     $query_vars[] = 'ext_post_message_navigation';
 
@@ -486,24 +486,24 @@ class CandelaLTI {
    */
   public static function update_db() {
     switch_to_blog(1);
-    $version = get_option( 'candela_lti_db_version', '');
+    $version = get_option( 'iupb_lti_db_version', '');
     restore_current_blog();
 
     if (empty($version) || $version == '1.0') {
       $meta_type = 'user';
       $user_id = 0; // ignored since delete all = TRUE
-      $meta_key = 'candelalti_lti_info';
+      $meta_key = 'iupblti_lti_info';
       $meta_value = ''; // ignored
       $delete_all = TRUE;
       delete_metadata( $meta_type, $user_id, $meta_key, $meta_value, $delete_all );
 
       switch_to_blog(1);
-      update_option( 'candela_lti_db_version', CANDELA_LTI_DB_VERSION );
+      update_option( 'iupb_lti_db_version', IUPB_LTI_DB_VERSION );
       restore_current_blog();
     }
     if ( $version == '1.1' ) {
       // This also updates the table.
-      CandelaLTI::create_db_table();
+      IUPB_LTI::create_db_table();
     }
   }
 
@@ -511,7 +511,7 @@ class CandelaLTI {
    * Add our LTI resource_link_id mapping api endpoint
    */
   public static function add_rewrite_rule() {
-    add_rewrite_rule( '^api/candelalti?(.*)', 'index.php?__candelalti=1&$matches[1]', 'top');
+    add_rewrite_rule( '^api/iupblti?(.*)', 'index.php?__iupblti=1&$matches[1]', 'top');
   }
 
   /**
@@ -520,8 +520,8 @@ class CandelaLTI {
   public static function setup_capabilities() {
     global $wp_roles;
 
-    $wp_roles->add_cap('administrator', CANDELA_LTI_CAP_LINK_LTI);
-    $wp_roles->add_cap('editor', CANDELA_LTI_CAP_LINK_LTI);
+    $wp_roles->add_cap('administrator', IUPB_LTI_CAP_LINK_LTI);
+    $wp_roles->add_cap('editor', IUPB_LTI_CAP_LINK_LTI);
   }
 
   /**
@@ -532,13 +532,13 @@ class CandelaLTI {
   public static function parse_request() {
     global $wp, $wpdb;
 
-    if ( CandelaLTI::user_can_map_lti_links() && isset( $wp->query_vars['__candelalti'] ) && !empty($wp->query_vars['__candelalti'] ) ) {
+    if ( IUPB_LTI::user_can_map_lti_links() && isset( $wp->query_vars['__iupblti'] ) && !empty($wp->query_vars['__iupblti'] ) ) {
       // Process adding link associations
-      if ( wp_verify_nonce($wp->query_vars['candela-lti-nonce'], 'mapping-lti-link') &&
+      if ( wp_verify_nonce($wp->query_vars['iupb-lti-nonce'], 'mapping-lti-link') &&
            ! empty( $wp->query_vars['resource_link_id']) &&
            ! empty( $wp->query_vars['target_action'] ) ) {
         // Update db record everything is valid
-        $map = CandelaLTI::get_lti_map($wp->query_vars['resource_link_id'] );
+        $map = IUPB_LTI::get_lti_map($wp->query_vars['resource_link_id'] );
 
         $current_user = wp_get_current_user();
         $values = array(
@@ -558,11 +558,11 @@ class CandelaLTI {
           // update the existing map.
           $where = array( 'resource_link_id' => $wp->query_vars['resource_link_id'] );
           $where_format = array( '%s' );
-          $result = $wpdb->update(CANDELA_LTI_TABLE, $values, $where, $value_format, $where_format );
+          $result = $wpdb->update(IUPB_LTI_TABLE, $values, $where, $value_format, $where_format );
         }
         else {
           // map was empty... insert the new map.
-          $result = $wpdb->insert(CANDELA_LTI_TABLE, $values, $value_format );
+          $result = $wpdb->insert(IUPB_LTI_TABLE, $values, $value_format );
         }
 
         if ( $result === FALSE ) {
@@ -572,11 +572,11 @@ class CandelaLTI {
       }
 
       // Process action items.
-      if ( wp_verify_nonce($wp->query_vars['candela-lti-nonce'], 'unmapping-lti-link') && ! empty( $wp->query_vars['action'] ) ) {
+      if ( wp_verify_nonce($wp->query_vars['iupb-lti-nonce'], 'unmapping-lti-link') && ! empty( $wp->query_vars['action'] ) ) {
         switch ( $wp->query_vars['action'] ) {
           case 'delete':
             if ( !empty($wp->query_vars['ID'] && is_numeric($wp->query_vars['ID']))) {
-              $wpdb->delete( CANDELA_LTI_TABLE, array( 'ID' => $wp->query_vars['ID'] ) );
+              $wpdb->delete( IUPB_LTI_TABLE, array( 'ID' => $wp->query_vars['ID'] ) );
             }
             break;
         }
@@ -615,11 +615,11 @@ class CandelaLTI {
       // Make sure query is ran against primary site since usermeta was set via
       // lti_setup action.
       switch_to_blog(1);
-      $resource_link_id = get_user_meta( $current_user->ID, CANDELA_LTI_USERMETA_LASTLINK, TRUE );
+      $resource_link_id = get_user_meta( $current_user->ID, IUPB_LTI_USERMETA_LASTLINK, TRUE );
       restore_current_blog();
     }
 
-    $table_name = CANDELA_LTI_TABLE;
+    $table_name = IUPB_LTI_TABLE;
     $sql = $wpdb->prepare("SELECT * FROM $table_name WHERE resource_link_id  = %s", $resource_link_id);
 
     $map = $wpdb->get_row( $sql );
@@ -640,7 +640,7 @@ class CandelaLTI {
       $target_action = get_permalink();
     }
 
-    $table_name = CANDELA_LTI_TABLE;
+    $table_name = IUPB_LTI_TABLE;
     $sql = $wpdb->prepare("SELECT * FROM $table_name WHERE target_action = %s", $target_action);
     return $wpdb->get_results($sql);
   }
@@ -651,11 +651,11 @@ class CandelaLTI {
    */
   public static function content_map_lti_launch( $content ) {
     if ( is_single()
-        && CandelaLTI::user_can_map_lti_links()
+        && IUPB_LTI::user_can_map_lti_links()
         && empty($wp->query_vars['page_title'])
         && ! isset($_GET['content_only']) ) {
 
-      $map = CandelaLTI::get_lti_map();
+      $map = IUPB_LTI::get_lti_map();
       $target_action = get_permalink();
       $resource_link_id = '';
       $links = array();
@@ -665,16 +665,16 @@ class CandelaLTI {
         // Map is either not set at all or needs to be set, inject content to do so.
         $text = __('Add LTI link');
         $hover = __('resource_link_id(##RES##)');
-        $url = get_site_url(1) . '/api/candelalti';
-        $url = wp_nonce_url($url, 'mapping-lti-link', 'candela-lti-nonce');
+        $url = get_site_url(1) . '/api/iupblti';
+        $url = wp_nonce_url($url, 'mapping-lti-link', 'iupb-lti-nonce');
         $url .= '&resource_link_id=' . urlencode($map->resource_link_id) . '&target_action=' . urlencode( $target_action ) . '&blog=' . get_current_blog_id();
         $links['add'] = '<div class="lti addmap"><a class="btn blue" href="' . $url . '" title="' . esc_attr( str_replace('##RES##', $map->resource_link_id, $hover) ) . '">' . $text . '</a></div>';
       }
 
-      $maps = CandelaLTI::get_maps_by_target_action();
+      $maps = IUPB_LTI::get_maps_by_target_action();
       if ( ! empty( $maps ) ) {
-        $base_url = get_site_url(1) . '/api/candelalti';
-        $base_url = wp_nonce_url($base_url, 'unmapping-lti-link', 'candela-lti-nonce');
+        $base_url = get_site_url(1) . '/api/iupblti';
+        $base_url = wp_nonce_url($base_url, 'unmapping-lti-link', 'iupb-lti-nonce');
         $text = __('Remove LTI link');
         $hover = __('resource_link_id(##RES##)');
         foreach ( $maps as $map ) {
@@ -709,7 +709,7 @@ class CandelaLTI {
 
     if ( is_user_logged_in() ) {
       $current_user = wp_get_current_user();
-      if ( $current_user->has_cap(CANDELA_LTI_CAP_LINK_LTI) ) {
+      if ( $current_user->has_cap(IUPB_LTI_CAP_LINK_LTI) ) {
         if ( $switched ) {
           restore_current_blog();
         }
@@ -726,7 +726,7 @@ class CandelaLTI {
    * Create a database table for storing LTI maps, this is a global table.
    */
   public static function create_db_table() {
-    $table_name = CANDELA_LTI_TABLE;
+    $table_name = IUPB_LTI_TABLE;
 
     $sql = "CREATE TABLE $table_name (
       ID mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -741,7 +741,7 @@ class CandelaLTI {
     dbDelta( $sql );
 
     switch_to_blog(1);
-    update_option( 'candela_lti_db_version', CANDELA_LTI_DB_VERSION );
+    update_option( 'iupb_lti_db_version', IUPB_LTI_DB_VERSION );
     restore_current_blog();
   }
 
@@ -750,9 +750,9 @@ class CandelaLTI {
    */
   public static function remove_db_table() {
     global $wpdb;
-    $table_name = CANDELA_LTI_TABLE;
+    $table_name = IUPB_LTI_TABLE;
     $wpdb->query("DROP TABLE IF EXISTS $table_name");
-    delete_option('candela_lti_db_version');
+    delete_option('iupb_lti_db_version');
   }
 
 }
