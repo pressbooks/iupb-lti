@@ -337,8 +337,13 @@ class IUPB_LTI {
     switch_to_blog($curr);
   }
 
+
+
+  // E. Scull: TODO, if we are allowing IU guest accounts, we need to do some more work here 
+  // since the numeric user ID won't work for the email (i.e. 80000945605@iu.edu)
+  // Should use email from LTI instead?
   public static function default_lti_email( $username ) {
-    return $username . '@127.0.0.1';
+    return $username . '@' . IU_DEFAULT_EMAIL_DOMAIN;
   }
 
   /**
