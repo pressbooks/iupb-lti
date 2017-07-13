@@ -66,6 +66,9 @@ class IUPB_LTI {
     IupbLTI::create_db_table();
   }
 
+  // Comment out the code that adds the deprecated "LTI Maps" functionality to the admin nav.
+  // TODO: Clean out this Mapping functionality from this entire plugin; it is vestigial and should be removed.
+
   // public static function admin_menu() {
   //   add_menu_page(
   //     __('LTI maps', 'candela_lti'),
