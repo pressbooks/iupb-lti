@@ -63,7 +63,7 @@ class IUPB_LTI {
       wp_die('This plugin requires the LTI plugin to be installed and active. <br /><a href="' . admin_url( 'plugins.php' ) . '">&laquo; Return to Plugins</a>');' )';
     }
 
-    IupbLTI::create_db_table();
+    IUPB_LTI::create_db_table();
   }
 
   // Comment out the code that adds the deprecated "LTI Maps" functionality to the admin nav.
