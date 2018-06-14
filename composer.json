@@ -1,0 +1,16 @@
+{
+    "name": "iueds/iupb-lti",
+    "description": "LTI Integration for Pressbooks at IU. Based on the Candela LTI integration from Lumen Learning, but looks for a specified custom LTI parameter to use for the WordPress login id (instead of using the generated LTI user id).",
+    "homepage": "https://github.com/IUeDS/iupb-lti",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "UITS eLearning Design and Services",
+            "homepage": "https://teachingonline.iu.edu"
+        }
+    ],
+    "type": "wordpress-plugin",
+    "require": {
+        "composer/installers": "^1.2"
+    }
+}
