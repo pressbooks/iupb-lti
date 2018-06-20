@@ -48,7 +48,7 @@ class IUPB_LTI {
     add_action( 'lti_setup', array( __CLASS__, 'lti_setup' ) );
     add_action( 'lti_launch', array( __CLASS__, 'lti_launch') );
 
-    add_action('admin_menu', array( __CLASS__, 'admin_menu'));
+    // add_action('admin_menu', array( __CLASS__, 'admin_menu')); // The admin_menu() method is commented out on line 72
 
     define('IUPB_LTI_TEACHERS_ONLY', 'iupb_lti_teachers_only');
     add_option( IUPB_LTI_TEACHERS_ONLY, false );
